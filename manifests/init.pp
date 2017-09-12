@@ -268,6 +268,7 @@ class zabbixagent (
   $log_remote_commands     = $::zabbixagent::params::log_remote_commands,
   $log_type                = $::zabbixagent::params::log_type,
   $max_lines_per_second    = $::zabbixagent::params::max_lines_per_second,
+  $manage_firewall         = $::zabbixagent::params::manage_firewall,
   $package_name            = $::zabbixagent::params::package_name,
   $perf_counter            = $::zabbixagent::params::perf_counter,
   $pid_file                = $::zabbixagent::params::pid_file,
@@ -296,7 +297,20 @@ class zabbixagent (
   # these should not be used as they are pre v2.1
   $depreciation_msg = 'was removed in v2.1. Please update your manifests and/or hiera data.'
   # lint:endignore
-
+  # Check some if they are boolean
+  validate_bool($manage_firewall)
+  if $manage_firewall {
+    firewall { '150 zabbix-agent':
+      dport  => $listen_port,
+      proto  => 'tcp',
+      action => 'accept',
+      source => $server,
+      state  => [
+        'NEW',
+        'RELATED',
+        'ESTABLISHED'],
+    }
+  }
   if ($include_dir) {
     fail("\$include_dir ${depreciation_msg}")
   }
